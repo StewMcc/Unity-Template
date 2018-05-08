@@ -56,6 +56,7 @@ public class SetupUnityForGit : EditorWindow {
 	private static void SetupDefaultFolders() {
 		string assetsFolder = Path.GetFullPath(Application.dataPath);
 
+		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Animation"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Meshes"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Fonts"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Presets"));
@@ -86,8 +87,6 @@ public class SetupUnityForGit : EditorWindow {
 	}
 
 	private void OnGUI() {
-		EditorGUILayout.LabelField("");
-
 		isSetupGitFiles = EditorGUILayout.Toggle("Setup git files", isSetupGitFiles);
 		isReplacingManifest = EditorGUILayout.Toggle("Replace packages manifest", isReplacingManifest);
 		isSetupDefaultFolders = EditorGUILayout.Toggle("Setup default folders", isSetupDefaultFolders);
