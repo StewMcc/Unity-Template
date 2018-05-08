@@ -28,7 +28,13 @@ public class SetupUnityForGit : EditorWindow {
 		Debug.LogWarning("Replaced: .gitignore");
 		Debug.LogWarning("Replaced: .gitattributes");
 
-		// Set Version Control - Visible Meta Files & Asset Serialization - force text
+		// Set; Version Control - Visible Meta Files & Asset Serialization - force text
+
+		EditorSettings.externalVersionControl = "Visible Meta Files";
+		EditorSettings.serializationMode = SerializationMode.ForceText;
+
+		Debug.LogWarning("Edit -> Project Settings -> Version Control: Changed to Visible Meta Files");
+		Debug.LogWarning("Edit -> Project Settings -> Asset Serialization: Change to Force Text");
 	}
 
 	private static void ReplaceManifest() {
