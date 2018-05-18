@@ -13,7 +13,9 @@ public class SetupUnityForGit : EditorWindow {
 
 	[MenuItem("Tools/Setup Unity For Git")]
 	public static void SetupWindow() {
-		GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
+		SetupUnityForGit window = GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
+		window.minSize = new Vector2(340, 260);
+		window.maxSize = new Vector2(340, 260);
 	}
 
 	private static void SetupGitFiles() {
@@ -26,7 +28,7 @@ public class SetupUnityForGit : EditorWindow {
 		File.Copy(sourceGitattributes, Path.Combine(projectFolder, ".gitattributes"), true);
 
 		Debug.LogWarning("Replaced: .gitignore");
-		Debug.LogWarning("Replaced: .gitattributes");
+		Debug.LogWarning("Replaced: .gitattributes, Remember to initialize Git-LFS");
 
 		// Set; Version Control - Visible Meta Files & Asset Serialization - force text
 
@@ -75,7 +77,7 @@ public class SetupUnityForGit : EditorWindow {
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Scripts"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Shaders"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Sounds"));
-		
+
 		Debug.LogWarning("Created default Folders with git .keep files");
 	}
 
@@ -93,9 +95,11 @@ public class SetupUnityForGit : EditorWindow {
 	}
 
 	private void OnGUI() {
-		isSetupGitFiles = EditorGUILayout.Toggle("Setup git files", isSetupGitFiles);
-		isReplacingManifest = EditorGUILayout.Toggle("Replace packages manifest", isReplacingManifest);
-		isSetupDefaultFolders = EditorGUILayout.Toggle("Setup default folders", isSetupDefaultFolders);
+		EditorGUILayout.BeginVertical(GUI.skin.box);
+		DisplaySetting(ref isSetupGitFiles, "Setup git files", "Remember to initialize Git-LFS in repo after setup. \n\nNote: If the file that should be LFS is already on repro it will not be converted there is tools for that.");
+		DisplaySetting(ref isReplacingManifest, "Replace packages", "Replaces the Package Manifest to exclude default packages");
+		DisplaySetting(ref isSetupDefaultFolders, "Setup default folders", "Creates default folders with .keep within them to force them to be added to Git");
+		EditorGUILayout.EndVertical();
 
 		if (GUILayout.Button("Start Setup")) {
 			if (isSetupGitFiles) {
@@ -127,5 +131,16 @@ public class SetupUnityForGit : EditorWindow {
 		}
 	}
 
+	private void DisplaySetting(ref bool setting, string name, string description = "") {
+
+		EditorGUILayout.BeginVertical(GUI.skin.box);
+		setting = EditorGUILayout.Toggle(name, setting);
+		if (setting && !string.IsNullOrEmpty(description)) {
+			EditorGUI.indentLevel++;
+			EditorGUILayout.LabelField(description, EditorStyles.wordWrappedLabel);
+			EditorGUI.indentLevel--;
+		}
+		EditorGUILayout.EndVertical();
+	}
 }
 
