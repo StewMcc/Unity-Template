@@ -97,7 +97,9 @@ public class SetupUnityForGit : EditorWindow {
 	private void OnGUI() {
 		EditorGUILayout.BeginVertical(GUI.skin.box);
 		DisplaySetting(ref isSetupGitFiles, "Setup git files", "Remember to initialize Git-LFS in repo after setup. \n\nNote: If the file that should be LFS is already on repro it will not be converted there is tools for that.");
+#if UNITY_2017_2_OR_NEWER
 		DisplaySetting(ref isReplacingManifest, "Replace packages", "Replaces the Package Manifest to exclude default packages");
+#endif
 		DisplaySetting(ref isSetupDefaultFolders, "Setup default folders", "Creates default folders with .keep within them to force them to be added to Git");
 		EditorGUILayout.EndVertical();
 
@@ -107,11 +109,13 @@ public class SetupUnityForGit : EditorWindow {
 				if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will override the current .gitignore & .gitattributes and replace them completely", "Destroy Them!!"))
 					SetupGitFiles();
 			}
+#if UNITY_2017_2_OR_NEWER
 			if (isReplacingManifest) {
 				EditorUtility.DisplayProgressBar(progressTitle, "Replacing packages manifest", 0.4f);
 				if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will override the current package manager manifest and replace it completely", "Destroy It!!"))
 					ReplaceManifest();
 			}
+#endif
 			if (isSetupDefaultFolders) {
 				EditorUtility.DisplayProgressBar(progressTitle, "Setup default folders", 0.6f);
 				SetupDefaultFolders();
