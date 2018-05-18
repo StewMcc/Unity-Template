@@ -1,11 +1,19 @@
 # Unity Project Template
-Unity project, with git-lfs, `.gitignore` and `.gitattributes` setup.
 
-- 2018.1 or newer delete UnityPackageManager folder
-- 2017.4 or older, delete Packages folder
+There is nice little Unity Package in [Releases](https://github.com/StewMcc/Unity-Template/releases) that sets up default git settings, and Unity editor settings, as well as some default folders. It works with Unity 2017.1 and later. 
 
-# Instead of forking
-Most of the time, easiest just to copy the `.gitignore`, `.gitattributes`, and `UnityPackageManager`/`Packages` folders into your new project. Also in Edit->ProjectSettings->EditorSettings set `Asset Serialization` to `Force Text`, and set `Version Control` `Mode` to `Visible Meta Files`.
+Drag and drop into project, `Tools -> Setup Unity for Git` it will bring up a utility window for setting stuff up, and allow you to delete it afterwards.
+
+![unitygittemplatetools](https://user-images.githubusercontent.com/8014812/40257926-dba3b544-5ae7-11e8-86c0-b257698dbfaf.PNG)
 
 
-This is due to the ProjectSettings `.asset`'s usually including lots of old useless information that won't be removed until you change a setting in the relevant file.
+ - Setup git files: Creates .gitattributes, & .gitignore for use with Unity, sets editor to force text, and visible meta files
+ - Replace packages: Replaces Unitys default manifest.json for package manager removing ads, analytics etc.
+ - Setup default folders: Sets up a bunch of default folders; Animation, Fonts, Materials, Meshes, Packages, Prefabs, Presets, Scenes, Scripts, Settings, Shaders, Sounds, Textures.
+
+
+### Notes:
+- Prefer using the package over forking, as makes sure you don't end up with random settings from older versions kept in your editor settings polluting your commits at later dates when they change or get update.
+
+- The package doesn't handle setting up the Git repository itself or setting up Git-LFS in the repository remember to initialize Git-LFS to use the .gitattributes file fully.
+
