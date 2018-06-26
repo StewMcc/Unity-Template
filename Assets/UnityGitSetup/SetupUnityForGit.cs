@@ -64,19 +64,19 @@ public class SetupUnityForGit : EditorWindow {
 	private static void SetupDefaultFolders() {
 		string assetsFolder = Path.GetFullPath(Application.dataPath);
 
+		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "3rdParty"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Animation"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Meshes"));
+		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Audio"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Fonts"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Presets"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Prefabs"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Settings"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Textures"));
+		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Meshes"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Materials"));
+		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Prefabs"));
+		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Presets"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Scenes"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Packages"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Scripts"));
+		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Settings"));
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Shaders"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Sounds"));
+		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Textures"));
 
 		Debug.LogWarning("Created default Folders with git .keep files");
 	}
