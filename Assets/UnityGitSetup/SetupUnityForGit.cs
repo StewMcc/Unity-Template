@@ -10,6 +10,7 @@ public class SetupUnityForGit : EditorWindow {
 	private bool isSetupGitFiles = true;
 	private bool isReplacingManifest = true;
 	private bool isSetupDefaultFolders = true;
+	private bool hasAllDefaultFolders = true;
 
 	[MenuItem("Tools/Setup Unity For Git")]
 	public static void SetupWindow() {
@@ -62,19 +63,23 @@ public class SetupUnityForGit : EditorWindow {
 		EditorGUILayout.BeginVertical(GUI.skin.box);
 
 		isSetupDefaultFolders = EditorGUILayout.Toggle("Setup default folders", isSetupDefaultFolders);
+
 		if (isSetupDefaultFolders) {
 			EditorGUI.indentLevel++;
 			EditorGUILayout.LabelField("Creates default folders with .keep within them to force them to be added to Git", EditorStyles.wordWrappedLabel);
-			EditorGUI.indentLevel--;
 
-			folderOptionsScrollPosition = EditorGUILayout.BeginScrollView(folderOptionsScrollPosition);
+			hasAllDefaultFolders = EditorGUILayout.Toggle("All", hasAllDefaultFolders);
 
-			for (int i = 0; i < folderOptions.Length; i++) {
-				EditorGUI.indentLevel++;
-				folderOptions[i].createFolder = EditorGUILayout.Toggle(folderOptions[i].folderName, folderOptions[i].createFolder);
-				EditorGUI.indentLevel--;
+			if (!hasAllDefaultFolders) {
+				folderOptionsScrollPosition = EditorGUILayout.BeginScrollView(folderOptionsScrollPosition);
+
+				for (int i = 0; i < folderOptions.Length; i++) {
+					folderOptions[i].createFolder = EditorGUILayout.Toggle(folderOptions[i].folderName, folderOptions[i].createFolder);
+				}
+				EditorGUILayout.EndScrollView();
 			}
-			EditorGUILayout.EndScrollView();
+
+			EditorGUI.indentLevel--;
 		}
 		EditorGUILayout.EndVertical();
 	}
@@ -126,7 +131,7 @@ public class SetupUnityForGit : EditorWindow {
 		string assetsFolder = Path.GetFullPath(Application.dataPath);
 
 		foreach (var folderOption in folderOptions) {
-			if (folderOption.createFolder) {
+			if (folderOption.createFolder || hasAllDefaultFolders) {
 				CreateFolderWithGitKeep(Path.Combine(assetsFolder, folderOption.folderName));
 			}
 		}
