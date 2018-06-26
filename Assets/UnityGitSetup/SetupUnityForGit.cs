@@ -14,8 +14,69 @@ public class SetupUnityForGit : EditorWindow {
 	[MenuItem("Tools/Setup Unity For Git")]
 	public static void SetupWindow() {
 		SetupUnityForGit window = GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
-		window.minSize = new Vector2(340, 260);
-		window.maxSize = new Vector2(340, 260);
+		window.minSize = new Vector2(340, 360);
+		window.maxSize = new Vector2(340, 1024);
+	}
+
+	private void DisplaySetting(ref bool setting, string settingsName, string description = "") {
+
+		EditorGUILayout.BeginVertical(GUI.skin.box);
+		setting = EditorGUILayout.Toggle(settingsName, setting);
+		if (setting && !string.IsNullOrEmpty(description)) {
+			EditorGUI.indentLevel++;
+			EditorGUILayout.LabelField(description, EditorStyles.wordWrappedLabel);
+			EditorGUI.indentLevel--;
+		}
+		EditorGUILayout.EndVertical();
+	}
+
+	private struct FolderOption {
+		public bool createFolder;
+		public readonly string folderName;
+
+		public FolderOption(bool create,string name){
+			createFolder = create;
+			folderName = name;
+		}
+	}
+
+	private readonly FolderOption[] folderOptions = {
+		new FolderOption (true,"3rdParty"),
+		new FolderOption (false,"Animation"),
+		new FolderOption (false,"Audio"),
+		new FolderOption (false,"Fonts"),
+		new FolderOption (false,"Meshes"),
+		new FolderOption (false,"Materials"),
+		new FolderOption (true,"Prefabs"),
+		new FolderOption (false,"Presets"),
+		new FolderOption (true,"Scenes"),
+		new FolderOption (true,"Scripts"),
+		new FolderOption (true,"Settings"),
+		new FolderOption (false,"Shaders"),
+		new FolderOption (false,"Textures")
+	};
+
+	Vector2 folderOptionsScrollPosition;
+
+	private void DisplayDefaultFolderOptions() {
+		EditorGUILayout.BeginVertical(GUI.skin.box);
+
+		isSetupDefaultFolders = EditorGUILayout.Toggle("Setup default folders", isSetupDefaultFolders);
+		if (isSetupDefaultFolders) {
+			EditorGUI.indentLevel++;
+			EditorGUILayout.LabelField("Creates default folders with .keep within them to force them to be added to Git", EditorStyles.wordWrappedLabel);
+			EditorGUI.indentLevel--;
+
+			folderOptionsScrollPosition = EditorGUILayout.BeginScrollView(folderOptionsScrollPosition);
+
+			for (int i = 0; i < folderOptions.Length; i++) {
+				EditorGUI.indentLevel++;
+				folderOptions[i].createFolder = EditorGUILayout.Toggle(folderOptions[i].folderName, folderOptions[i].createFolder);
+				EditorGUI.indentLevel--;
+			}
+			EditorGUILayout.EndScrollView();
+		}
+		EditorGUILayout.EndVertical();
 	}
 
 	private void SetupGitFiles() {
@@ -64,19 +125,11 @@ public class SetupUnityForGit : EditorWindow {
 	private void SetupDefaultFolders() {
 		string assetsFolder = Path.GetFullPath(Application.dataPath);
 
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "3rdParty"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Animation"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Audio"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Fonts"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Meshes"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Materials"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Prefabs"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Presets"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Scenes"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Scripts"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Settings"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Shaders"));
-		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "Textures"));
+		foreach (var folderOption in folderOptions) {
+			if (folderOption.createFolder) {
+				CreateFolderWithGitKeep(Path.Combine(assetsFolder, folderOption.folderName));
+			}
+		}
 
 		Debug.LogWarning("Created default Folders with git .keep files");
 	}
@@ -100,7 +153,8 @@ public class SetupUnityForGit : EditorWindow {
 #if UNITY_2017_2_OR_NEWER
 		DisplaySetting(ref isReplacingManifest, "Replace packages", "Replaces the Package Manifest to exclude default packages");
 #endif
-		DisplaySetting(ref isSetupDefaultFolders, "Setup default folders", "Creates default folders with .keep within them to force them to be added to Git");
+		DisplayDefaultFolderOptions();
+
 		EditorGUILayout.EndVertical();
 
 		if (GUILayout.Button("Start Setup")) {
@@ -135,16 +189,5 @@ public class SetupUnityForGit : EditorWindow {
 		}
 	}
 
-	private void DisplaySetting(ref bool setting, string name, string description = "") {
-
-		EditorGUILayout.BeginVertical(GUI.skin.box);
-		setting = EditorGUILayout.Toggle(name, setting);
-		if (setting && !string.IsNullOrEmpty(description)) {
-			EditorGUI.indentLevel++;
-			EditorGUILayout.LabelField(description, EditorStyles.wordWrappedLabel);
-			EditorGUI.indentLevel--;
-		}
-		EditorGUILayout.EndVertical();
-	}
 }
 
