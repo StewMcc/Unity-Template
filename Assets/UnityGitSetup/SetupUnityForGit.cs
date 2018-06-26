@@ -18,7 +18,7 @@ public class SetupUnityForGit : EditorWindow {
 		window.maxSize = new Vector2(340, 260);
 	}
 
-	private static void SetupGitFiles() {
+	private void SetupGitFiles() {
 		// Set Git .gitignore & .gitattributes
 		string projectFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../"));
 		string sourceGitignore = Path.Combine(projectFolder, "Assets/UnityGitSetup/gitignore.txt");
@@ -39,7 +39,7 @@ public class SetupUnityForGit : EditorWindow {
 		Debug.LogWarning("Edit -> Project Settings -> Asset Serialization: Change to Force Text");
 	}
 
-	private static void ReplaceManifest() {
+	private void ReplaceManifest() {
 
 		string packageFolder;
 #if UNITY_2018_1_OR_NEWER
@@ -61,7 +61,7 @@ public class SetupUnityForGit : EditorWindow {
 
 	}
 
-	private static void SetupDefaultFolders() {
+	private void SetupDefaultFolders() {
 		string assetsFolder = Path.GetFullPath(Application.dataPath);
 
 		CreateFolderWithGitKeep(Path.Combine(assetsFolder, "3rdParty"));
@@ -81,13 +81,13 @@ public class SetupUnityForGit : EditorWindow {
 		Debug.LogWarning("Created default Folders with git .keep files");
 	}
 
-	private static void CreateFolderWithGitKeep(string folder) {
+	private void CreateFolderWithGitKeep(string folder) {
 		Directory.CreateDirectory(folder);
 		FileStream file = File.Create(Path.Combine(folder, ".keep"));
 		file.Close();
 	}
 
-	private static void CleanUp() {
+	private void CleanUp() {
 		SetupUnityForGit window = GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
 		window.Close();
 		Debug.LogWarning("Removing Unity Git Setup Tool");
