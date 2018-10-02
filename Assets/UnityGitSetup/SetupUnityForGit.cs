@@ -35,7 +35,7 @@ public class SetupUnityForGit : EditorWindow {
 		public bool createFolder;
 		public readonly string folderName;
 
-		public FolderOption(bool create,string name){
+		public FolderOption(bool create, string name) {
 			createFolder = create;
 			folderName = name;
 		}
@@ -106,19 +106,20 @@ public class SetupUnityForGit : EditorWindow {
 	}
 
 	private void ReplaceManifest() {
+		string projectFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../"));
 
 		string packageFolder;
+		string sourceManifest;
 #if UNITY_2018_1_OR_NEWER
 		packageFolder = "Packages";
+		sourceManifest = Path.Combine(projectFolder, "Assets/UnityGitSetup/manifest-2018.txt");
 #else
 		packageFolder = "UnityPackageManager";
+		sourceManifest = Path.Combine(projectFolder, "Assets/UnityGitSetup/manifest-2017.txt");
 #endif
-
-		string projectFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../"));
 
 		packageFolder = Path.Combine(projectFolder, packageFolder);
 
-		string sourceManifest = Path.Combine(projectFolder, "Assets/UnityGitSetup/manifest.txt");
 		string destinationManifest = Path.Combine(packageFolder, "manifest.json");
 
 		File.Copy(sourceManifest, destinationManifest, true);
