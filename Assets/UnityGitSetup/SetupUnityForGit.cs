@@ -1,199 +1,202 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
+using System.Linq;
+
 using UnityEditor;
+using UnityEditor.PackageManager;
+using UnityEditor.PackageManager.Requests;
+
 using UnityEngine;
 
-public class SetupUnityForGit : EditorWindow {
+public class SetupUnityForGit : EditorWindow
+{
+    private struct ToggleOption
+    {
+        public bool IsOn;
+        public readonly string Name;
 
-	private const string progressTitle = "Setup Unity: ";
+        public ToggleOption(bool isOn, string name)
+        {
+            IsOn = isOn;
+            Name = name;
+        }
+    }
 
-	private bool isSetupGitFiles = true;
-	private bool isReplacingManifest = true;
-	private bool isSetupDefaultFolders = true;
-	private bool hasAllDefaultFolders = true;
+    private const string kProgressTitle = "Setup Unity: ";
 
-	[MenuItem("Tools/Setup Unity For Git")]
-	public static void SetupWindow() {
-		SetupUnityForGit window = GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
-		window.minSize = new Vector2(340, 360);
-		window.maxSize = new Vector2(340, 1024);
-	}
+    private bool m_IsSetupGitFiles = true;
+    private bool m_IsRemovingPackages = true;
+    private bool hasRemoveAllPackages = true;
 
-	private void DisplaySetting(ref bool setting, string settingsName, string description = "") {
+    private ToggleOption[] m_PackagesToRemove = new ToggleOption[] { };
 
-		EditorGUILayout.BeginVertical(GUI.skin.box);
-		setting = EditorGUILayout.Toggle(settingsName, setting);
-		if (setting && !string.IsNullOrEmpty(description)) {
-			EditorGUI.indentLevel++;
-			EditorGUILayout.LabelField(description, EditorStyles.wordWrappedLabel);
-			EditorGUI.indentLevel--;
-		}
-		EditorGUILayout.EndVertical();
-	}
+    [MenuItem("Tools/Setup Unity For Git")]
+    public static void SetupWindow()
+    {
+        SetupUnityForGit window = GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
+        window.minSize = new Vector2(340, 360);
+        window.maxSize = new Vector2(340, 1024);
 
-	private struct FolderOption {
-		public bool createFolder;
-		public readonly string folderName;
+        window.BuildPackageList();
+    }
 
-		public FolderOption(bool create, string name) {
-			createFolder = create;
-			folderName = name;
-		}
-	}
+    public void BuildPackageList()
+    {
+        ListRequest packageList = Client.List(true, false);
+        while (!packageList.IsCompleted)
+        {
+        }
 
-	private readonly FolderOption[] folderOptions = {
-		new FolderOption (true,"3rdParty"),
-		new FolderOption (false,"Animation"),
-		new FolderOption (false,"Audio"),
-		new FolderOption (false,"Fonts"),
-		new FolderOption (false,"Meshes"),
-		new FolderOption (false,"Materials"),
-		new FolderOption (true,"Prefabs"),
-		new FolderOption (false,"Presets"),
-		new FolderOption (true,"Scenes"),
-		new FolderOption (true,"Scripts"),
-		new FolderOption (true,"Settings"),
-		new FolderOption (false,"Shaders"),
-		new FolderOption (false,"Textures")
-	};
+        m_PackagesToRemove = packageList.Result
+            .Where(package => !package.name.Contains("package-manager-ui") && !package.name.Contains("com.unity.modules"))
+            .Select((package) => { return new ToggleOption(true, package.name); })
+            .ToArray();
 
-	Vector2 folderOptionsScrollPosition;
+        if (m_PackagesToRemove.Length > 0)
+        {
+            m_IsRemovingPackages = true;
+        }
+        else
+        {
+            m_IsRemovingPackages = false;
+        }
+    }
 
-	private void DisplayDefaultFolderOptions() {
-		EditorGUILayout.BeginVertical(GUI.skin.box);
+    private void DisplaySetting(ref bool setting, string settingsName, string description = "")
+    {
+        EditorGUILayout.BeginVertical(GUI.skin.box);
+        setting = EditorGUILayout.Toggle(settingsName, setting);
+        if (setting && !string.IsNullOrEmpty(description))
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField(description, EditorStyles.wordWrappedLabel);
+            EditorGUI.indentLevel--;
+        }
+        EditorGUILayout.EndVertical();
+    }
 
-		isSetupDefaultFolders = EditorGUILayout.Toggle("Setup default folders", isSetupDefaultFolders);
+    private void SetupGitFiles()
+    {
+        // Set Git .gitignore & .gitattributes
+        string projectFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../"));
+        string sourceGitignore = Path.Combine(projectFolder, "Assets/UnityGitSetup/gitignore.txt");
+        string sourceGitattributes = Path.Combine(projectFolder, "Assets/UnityGitSetup/gitattributes.txt");
 
-		if (isSetupDefaultFolders) {
-			EditorGUI.indentLevel++;
-			EditorGUILayout.LabelField("Creates default folders with .keep within them to force them to be added to Git", EditorStyles.wordWrappedLabel);
+        File.Copy(sourceGitignore, Path.Combine(projectFolder, ".gitignore"), true);
+        File.Copy(sourceGitattributes, Path.Combine(projectFolder, ".gitattributes"), true);
 
-			hasAllDefaultFolders = EditorGUILayout.Toggle("All", hasAllDefaultFolders);
+        Debug.LogWarning("Replaced: .gitignore");
+        Debug.LogWarning("Replaced: .gitattributes, Remember to initialize Git-LFS");
 
-			if (!hasAllDefaultFolders) {
-				folderOptionsScrollPosition = EditorGUILayout.BeginScrollView(folderOptionsScrollPosition);
+        // Set; Version Control - Visible Meta Files & Asset Serialization - force text
 
-				for (int i = 0; i < folderOptions.Length; i++) {
-					folderOptions[i].createFolder = EditorGUILayout.Toggle(folderOptions[i].folderName, folderOptions[i].createFolder);
-				}
-				EditorGUILayout.EndScrollView();
-			}
+        EditorSettings.externalVersionControl = "Visible Meta Files";
+        EditorSettings.serializationMode = SerializationMode.ForceText;
 
-			EditorGUI.indentLevel--;
-		}
-		EditorGUILayout.EndVertical();
-	}
+        Debug.LogWarning("Edit -> Project Settings -> Version Control: Changed to Visible Meta Files");
+        Debug.LogWarning("Edit -> Project Settings -> Asset Serialization: Change to Force Text");
+    }
 
-	private void SetupGitFiles() {
-		// Set Git .gitignore & .gitattributes
-		string projectFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../"));
-		string sourceGitignore = Path.Combine(projectFolder, "Assets/UnityGitSetup/gitignore.txt");
-		string sourceGitattributes = Path.Combine(projectFolder, "Assets/UnityGitSetup/gitattributes.txt");
+    Vector2 folderOptionsScrollPosition;
 
-		File.Copy(sourceGitignore, Path.Combine(projectFolder, ".gitignore"), true);
-		File.Copy(sourceGitattributes, Path.Combine(projectFolder, ".gitattributes"), true);
+    private void DisplayRemovablePackages()
+    {
+        EditorGUILayout.BeginVertical(GUI.skin.box);
 
-		Debug.LogWarning("Replaced: .gitignore");
-		Debug.LogWarning("Replaced: .gitattributes, Remember to initialize Git-LFS");
+        m_IsRemovingPackages = EditorGUILayout.Toggle("Remove packages", m_IsRemovingPackages);
 
-		// Set; Version Control - Visible Meta Files & Asset Serialization - force text
+        if (m_IsRemovingPackages)
+        {
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField("Removes selected packages, added by default by Unity", EditorStyles.wordWrappedLabel);
 
-		EditorSettings.externalVersionControl = "Visible Meta Files";
-		EditorSettings.serializationMode = SerializationMode.ForceText;
+            hasRemoveAllPackages = EditorGUILayout.Toggle("All", hasRemoveAllPackages);
 
-		Debug.LogWarning("Edit -> Project Settings -> Version Control: Changed to Visible Meta Files");
-		Debug.LogWarning("Edit -> Project Settings -> Asset Serialization: Change to Force Text");
-	}
+            if (!hasRemoveAllPackages)
+            {
+                folderOptionsScrollPosition = EditorGUILayout.BeginScrollView(folderOptionsScrollPosition);
 
-	private void ReplaceManifest() {
-		string projectFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../"));
+                for (int i = 0; i < m_PackagesToRemove.Length; i++)
+                {
+                    m_PackagesToRemove[i].IsOn = EditorGUILayout.Toggle(m_PackagesToRemove[i].Name, m_PackagesToRemove[i].IsOn);
+                }
+                EditorGUILayout.EndScrollView();
+            }
 
-		string packageFolder;
-		string sourceManifest;
-#if UNITY_2018_1_OR_NEWER
-		packageFolder = "Packages";
-		sourceManifest = Path.Combine(projectFolder, "Assets/UnityGitSetup/manifest-2018.txt");
-#else
-		packageFolder = "UnityPackageManager";
-		sourceManifest = Path.Combine(projectFolder, "Assets/UnityGitSetup/manifest-2017.txt");
-#endif
+            EditorGUI.indentLevel--;
+        }
+        EditorGUILayout.EndVertical();
+    }
 
-		packageFolder = Path.Combine(projectFolder, packageFolder);
+    private void RemovePackages()
+    {
+        RemoveRequest removePackage;
 
-		string destinationManifest = Path.Combine(packageFolder, "manifest.json");
+        foreach (var package in m_PackagesToRemove)
+        {
+            if (hasRemoveAllPackages || package.IsOn)
+            {
+                removePackage = Client.Remove(package.Name);
+                while (!removePackage.IsCompleted)
+                {
+                }
+            }
+        }
+    }
 
-		File.Copy(sourceManifest, destinationManifest, true);
+    private void CleanUp()
+    {
+        SetupUnityForGit window = GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
+        window.Close();
+        Debug.LogWarning("Removing Unity Git Setup Tool");
+        AssetDatabase.MoveAssetToTrash("Assets/UnityGitSetup");
+    }
 
-		Debug.LogWarning("Replaced: " + destinationManifest);
+    private void OnGUI()
+    {
+        EditorGUILayout.BeginVertical(GUI.skin.box);
+        DisplaySetting(ref m_IsSetupGitFiles, "Setup git files", "Remember to initialize Git-LFS in repo after setup. \n\nNote: If the file that should be LFS is already on repro it will not be converted there is tools for that.");
 
-	}
+        if (m_PackagesToRemove.Length > 0)
+        {
+            DisplayRemovablePackages();
+        }
 
-	private void SetupDefaultFolders() {
-		string assetsFolder = Path.GetFullPath(Application.dataPath);
+        EditorGUILayout.EndVertical();
 
-		foreach (var folderOption in folderOptions) {
-			if (folderOption.createFolder || hasAllDefaultFolders) {
-				CreateFolderWithGitKeep(Path.Combine(assetsFolder, folderOption.folderName));
-			}
-		}
+        if (GUILayout.Button("Start Setup"))
+        {
+            if (m_IsSetupGitFiles)
+            {
+                EditorUtility.DisplayProgressBar(kProgressTitle, "Setup Git", 0.2f);
+                if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will override the current .gitignore & .gitattributes and replace them completely", "Destroy Them!!"))
+                {
+                    SetupGitFiles();
+                    // Ensure any changes get picked up by the editor.
+                    AssetDatabase.SaveAssets();
+                }
+            }
 
-		Debug.LogWarning("Created default Folders with git .keep files");
-	}
+            if (m_IsRemovingPackages)
+            {
+                EditorUtility.DisplayProgressBar(kProgressTitle, "Removing packages", 0.4f);
+                if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will remove the selected packages completely", "Destroy It!!"))
+                {
+                    RemovePackages();
+                }
+            }
 
-	private void CreateFolderWithGitKeep(string folder) {
-		Directory.CreateDirectory(folder);
-		FileStream file = File.Create(Path.Combine(folder, ".keep"));
-		file.Close();
-	}
-
-	private void CleanUp() {
-		SetupUnityForGit window = GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
-		window.Close();
-		Debug.LogWarning("Removing Unity Git Setup Tool");
-		AssetDatabase.MoveAssetToTrash("Assets/UnityGitSetup");
-	}
-
-	private void OnGUI() {
-		EditorGUILayout.BeginVertical(GUI.skin.box);
-		DisplaySetting(ref isSetupGitFiles, "Setup git files", "Remember to initialize Git-LFS in repo after setup. \n\nNote: If the file that should be LFS is already on repro it will not be converted there is tools for that.");
-#if UNITY_2017_2_OR_NEWER
-		DisplaySetting(ref isReplacingManifest, "Replace packages", "Replaces the Package Manifest to exclude default packages");
-#endif
-		DisplayDefaultFolderOptions();
-
-		EditorGUILayout.EndVertical();
-
-		if (GUILayout.Button("Start Setup")) {
-			if (isSetupGitFiles) {
-				EditorUtility.DisplayProgressBar(progressTitle, "Setup Git", 0.2f);
-				if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will override the current .gitignore & .gitattributes and replace them completely", "Destroy Them!!"))
-					SetupGitFiles();
-			}
-#if UNITY_2017_2_OR_NEWER
-			if (isReplacingManifest) {
-				EditorUtility.DisplayProgressBar(progressTitle, "Replacing packages manifest", 0.4f);
-				if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will override the current package manager manifest and replace it completely", "Destroy It!!"))
-					ReplaceManifest();
-			}
-#endif
-			if (isSetupDefaultFolders) {
-				EditorUtility.DisplayProgressBar(progressTitle, "Setup default folders", 0.6f);
-				SetupDefaultFolders();
-			}
-			// Ensure any changes get picked up by the editor.
-			AssetDatabase.SaveAssets();
-			AssetDatabase.Refresh();
-
-			EditorUtility.ClearProgressBar();
-		}
-		if (GUILayout.Button("Remove Setup Tool")) {
-			if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will remove all trace of the SetupUnityForGit tool", "Destroy It!!", "Keep it around")) {
-				CleanUp();
-				// Ensure any changes get picked up by the editor.
-				AssetDatabase.Refresh();
-			}
-		}
-	}
+            EditorUtility.ClearProgressBar();
+        }
+        if (GUILayout.Button("Remove Setup Tool"))
+        {
+            if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will remove all trace of the SetupUnityForGit tool", "Destroy It!!", "Keep it around"))
+            {
+                CleanUp();
+                // Ensure any changes get picked up by the editor.
+                AssetDatabase.Refresh();
+            }
+        }
+    }
 
 }
 

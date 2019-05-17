@@ -1,3 +1,4 @@
+# Unity Git Setup
 # Line Endings, CRLF,LF.
 ## CSharp
 *.cs text diff=csharp
