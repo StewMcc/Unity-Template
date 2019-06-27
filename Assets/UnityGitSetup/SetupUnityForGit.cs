@@ -41,7 +41,7 @@ public class SetupUnityForGit : EditorWindow
 
     public void BuildPackageList()
     {
-        ListRequest packageList = Client.List(true, false);
+        ListRequest packageList = Client.List();
         while (!packageList.IsCompleted)
         {
         }
@@ -184,6 +184,8 @@ public class SetupUnityForGit : EditorWindow
                     RemovePackages();
                 }
             }
+
+            AssetDatabase.ForceReserializeAssets();
 
             EditorUtility.ClearProgressBar();
         }
