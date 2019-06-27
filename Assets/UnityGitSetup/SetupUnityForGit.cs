@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Linq;
 
 using UnityEditor;
 using UnityEditor.PackageManager;
@@ -25,11 +24,13 @@ public class SetupUnityForGit : EditorWindow
 
     private bool m_IsSetupGitFiles = true;
     private bool m_IsRemovingPackages = true;
-    private bool hasRemoveAllPackages = true;
+    private bool m_HasRemoveAllPackages = true;
 
     private ToggleOption[] m_PackagesToRemove = new ToggleOption[] { };
 
-    [MenuItem("Tools/Setup Unity For Git")]
+    private Vector2 m_FolderOptionsScrollPosition;
+
+    [MenuItem("Unity Template/Setup Unity For Git")]
     public static void SetupWindow()
     {
         SetupUnityForGit window = GetWindow<SetupUnityForGit>(true, "Setup Unity For Git", true);
@@ -39,7 +40,7 @@ public class SetupUnityForGit : EditorWindow
         window.BuildPackageList();
     }
 
-    public void BuildPackageList()
+    protected void BuildPackageList()
     {
         ListRequest packageList = Client.List();
         while (!packageList.IsCompleted)
@@ -74,29 +75,14 @@ public class SetupUnityForGit : EditorWindow
         EditorGUILayout.EndVertical();
     }
 
-    private void SetupGitFiles()
+    private void SetEditorSettingsForGit()
     {
-        // Set Git .gitignore & .gitattributes
-        string projectFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../"));
-        string sourceGitignore = Path.Combine(projectFolder, "Assets/UnityGitSetup/gitignore.txt");
-        string sourceGitattributes = Path.Combine(projectFolder, "Assets/UnityGitSetup/gitattributes.txt");
-
-        File.Copy(sourceGitignore, Path.Combine(projectFolder, ".gitignore"), true);
-        File.Copy(sourceGitattributes, Path.Combine(projectFolder, ".gitattributes"), true);
-
-        Debug.LogWarning("Replaced: .gitignore");
-        Debug.LogWarning("Replaced: .gitattributes, Remember to initialize Git-LFS");
-
-        // Set; Version Control - Visible Meta Files & Asset Serialization - force text
-
         EditorSettings.externalVersionControl = "Visible Meta Files";
         EditorSettings.serializationMode = SerializationMode.ForceText;
 
         Debug.LogWarning("Edit -> Project Settings -> Version Control: Changed to Visible Meta Files");
         Debug.LogWarning("Edit -> Project Settings -> Asset Serialization: Change to Force Text");
     }
-
-    Vector2 folderOptionsScrollPosition;
 
     private void DisplayRemovablePackages()
     {
@@ -109,11 +95,11 @@ public class SetupUnityForGit : EditorWindow
             EditorGUI.indentLevel++;
             EditorGUILayout.LabelField("Removes selected packages, added by default by Unity", EditorStyles.wordWrappedLabel);
 
-            hasRemoveAllPackages = EditorGUILayout.Toggle("All", hasRemoveAllPackages);
+            m_HasRemoveAllPackages = EditorGUILayout.Toggle("All", m_HasRemoveAllPackages);
 
-            if (!hasRemoveAllPackages)
+            if (!m_HasRemoveAllPackages)
             {
-                folderOptionsScrollPosition = EditorGUILayout.BeginScrollView(folderOptionsScrollPosition);
+                m_FolderOptionsScrollPosition = EditorGUILayout.BeginScrollView(m_FolderOptionsScrollPosition);
 
                 for (int i = 0; i < m_PackagesToRemove.Length; i++)
                 {
@@ -133,7 +119,7 @@ public class SetupUnityForGit : EditorWindow
 
         foreach (var package in m_PackagesToRemove)
         {
-            if (hasRemoveAllPackages || package.IsOn)
+            if (m_HasRemoveAllPackages || package.IsOn)
             {
                 removePackage = Client.Remove(package.Name);
                 while (!removePackage.IsCompleted)
@@ -154,7 +140,7 @@ public class SetupUnityForGit : EditorWindow
     private void OnGUI()
     {
         EditorGUILayout.BeginVertical(GUI.skin.box);
-        DisplaySetting(ref m_IsSetupGitFiles, "Setup git files", "Remember to initialize Git-LFS in repo after setup. \n\nNote: If the file that should be LFS is already on repro it will not be converted there is tools for that.");
+        DisplaySetting(ref m_IsSetupGitFiles, "Setup editor for git", "Remember to initialize Git-LFS in repo after setup. \n\nNote: If the file that should be LFS is already on repro it will not be converted there is tools for that.");
 
         if (m_PackagesToRemove.Length > 0)
         {
@@ -167,13 +153,10 @@ public class SetupUnityForGit : EditorWindow
         {
             if (m_IsSetupGitFiles)
             {
-                EditorUtility.DisplayProgressBar(kProgressTitle, "Setup Git", 0.2f);
-                if (EditorUtility.DisplayDialog("Warning Destructive operation!", "This will override the current .gitignore & .gitattributes and replace them completely", "Destroy Them!!"))
-                {
-                    SetupGitFiles();
-                    // Ensure any changes get picked up by the editor.
-                    AssetDatabase.SaveAssets();
-                }
+                EditorUtility.DisplayProgressBar(kProgressTitle, "Setup Editor for Git", 0.2f);
+                SetEditorSettingsForGit();
+                // Ensure any changes get picked up by the editor.
+                AssetDatabase.SaveAssets();
             }
 
             if (m_IsRemovingPackages)
@@ -199,6 +182,4 @@ public class SetupUnityForGit : EditorWindow
             }
         }
     }
-
 }
-
