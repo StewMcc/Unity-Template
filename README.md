@@ -6,5 +6,5 @@ There is a nice little tool (**Unity Template -> Setup Unity for Git**) that can
 It double checks editor is set to force text, and visible meta files, it can also remove any of the packages added by Unity's upgrade process that you don't want (**some of these are added to help you**), then forces a re-serialization of all the meta files. The tool can then be used to remove itself.
 
 # Tested on
- - 2019.3 - But it will invoke the updater for packages, let it update, you can still use the tool to remove them after the update is finished.
+ - 2019.4 - But it will invoke the updater for packages, let it update, you can still use the tool to remove them after the update is finished.
  - 2018.4
