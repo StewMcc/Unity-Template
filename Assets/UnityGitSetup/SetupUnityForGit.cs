@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 
 using UnityEditor;
 using UnityEditor.PackageManager;
@@ -77,7 +77,11 @@ public class SetupUnityForGit : EditorWindow
 
     private void SetEditorSettingsForGit()
     {
+#if UNITY_2020_1_OR_NEWER
+        VersionControlSettings.mode = "Visible Meta Files";
+#else
         EditorSettings.externalVersionControl = "Visible Meta Files";
+#endif
         EditorSettings.serializationMode = SerializationMode.ForceText;
 
         Debug.LogWarning("Edit -> Project Settings -> Version Control: Changed to Visible Meta Files");
